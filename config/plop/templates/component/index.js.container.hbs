@@ -1,0 +1,42 @@
+// @flow
+// NPM Modules
+import React, { useEffect, useState } from "react";
+// External Modules
+
+// Components
+import { getFeed } from "@modules/shared/api/news";
+import {{name}} from "./{{name}}";
+
+// ======================================================
+// {{name}}Container Stateless Component
+// ======================================================
+const {{name}}Container = ({ feed }: PropsType): React$Node => {
+  // ------------------------------------
+  // React Lifecycle Functions
+  // ------------------------------------
+  const dataState = {
+    error: {},
+    data: {},
+    loading: true
+  };
+  const [state, setState] = useState(dataState);
+
+  const onMountEffect = () => {
+
+  };
+
+  useEffect(onMountEffect, []);
+
+  // ------------------------------------
+  // Helper Functions
+  // ------------------------------------
+
+  // ------------------------------------
+  // Render Functions
+  // ------------------------------------
+  return <{{name}} {{name}}Data={state} />;
+};
+
+{{name}}Container.defaultProps = {};
+
+export default {{name}}Container;

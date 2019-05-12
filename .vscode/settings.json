@@ -1,0 +1,16 @@
+{
+  "prettier.requireConfig": true,
+  "eslint.options": {
+    "ignorePattern": ["node_modules/*","public/*", "tests/*"],
+    "configFile": "/Users/ida/Desktop/homebase/config/eslint/eslint.config.babel.dev.js"
+  },
+  "javascript.validate.enable": false,
+  "flow.runOnAllFiles": false,
+  "flow.pathToFlow": "/Users/ida/Desktop/homebase/node_modules/.bin/flow-bin",
+  "flow.useNPMPackagedFlow": true,
+  "scss.validate": false,
+  "css.validate": false,
+  "less.validate": false,
+  "stylelint.enable": true,
+  "prettier.stylelintIntegration": true
+}

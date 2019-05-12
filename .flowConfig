@@ -1,0 +1,35 @@
+# Generated from config/flow/flow.config.babel.json
+[include]
+
+
+[ignore]
+.*/node_modules/.*
+.*/public/.*
+.*/scripts/.*
+.*/src/serviceWorker.js
+
+[libs]
+config/flow/flow-typed
+config/flow/custom-types.js
+
+[options]
+include_warnings=false
+esproposal.class_instance_fields=enable
+esproposal.class_static_fields=enable
+esproposal.export_star_as=enable
+esproposal.optional_chaining=enable
+esproposal.nullish_coalescing=enable
+esproposal.decorators=ignore
+module.ignore_non_literal_requires=true
+module.file_ext=.js
+module.file_ext=.jsx
+module.file_ext=.json
+module.file_ext=.scss
+module.file_ext=.css
+module.name_mapper='^@modules' -> '<PROJECT_ROOT>/src/modules'
+module.name_mapper='^@styles' -> '<PROJECT_ROOT>/src/styles'
+module.name_mapper='^@src' -> '<PROJECT_ROOT>/src'
+module.name_mapper='^@config' -> '<PROJECT_ROOT>/config'
+module.name_mapper.extension='.*\(.scss|.graphql|.png|.jpg\)' -> 'empty/object'
+
+

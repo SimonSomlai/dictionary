@@ -1,0 +1,35 @@
+{
+  "ignore": [
+    ".*/node_modules/.*",
+    ".*/public/.*",
+    ".*/scripts/.*",
+    ".*/src/serviceWorker.js"
+  ],
+  "include": [""],
+  "lints": [""],
+  "libs": ["config/flow/flow-typed", "config/flow/custom-types.js"],
+  "options": {
+    "include_warnings": false,
+    "esproposal": {
+      "class_instance_fields": "enable",
+      "class_static_fields": "enable",
+      "export_star_as": "enable",
+      "optional_chaining": "enable",
+      "nullish_coalescing": "enable",
+      "decorators": "ignore"
+    },
+    "module": {
+      "ignore_non_literal_requires": true,
+      "file_ext": [".js", ".jsx", ".json", ".scss", ".css"],
+      "name_mapper": [
+        "'^@modules' -> '<PROJECT_ROOT>/src/modules'",
+        "'^@styles' -> '<PROJECT_ROOT>/src/styles'",
+        "'^@src' -> '<PROJECT_ROOT>/src'",
+        "'^@config' -> '<PROJECT_ROOT>/config'",
+        {
+          "extension": "'.*\\(.scss|.graphql|.png|.jpg\\)' -> 'empty/object'"
+        }
+      ]
+    }
+  }
+}
