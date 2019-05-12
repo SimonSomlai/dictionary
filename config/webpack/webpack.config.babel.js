@@ -1,23 +1,23 @@
 // @flow
-import path from "path";
+import {
+  aliases,
+  fileRegex,
+  jsRegex,
+  sassModuleRegex,
+  sassRegex
+} from "./shared.config.babel.js";
+import Dotenv from "dotenv-webpack";
+import GitRevisionPlugin from "git-revision-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import OptimizeCSSAssetsPlugin from "optimize-css-assets-webpack-plugin";
 import React from "react";
 import ReactDOMServer from "react-dom/server";
 import StyleLintPlugin from "stylelint-webpack-plugin";
-import HtmlWebpackPlugin from "html-webpack-plugin";
-import fs from "fs";
-import GitRevisionPlugin from "git-revision-webpack-plugin";
-import Dotenv from "dotenv-webpack";
 import TerserPlugin from "terser-webpack-plugin";
-import MiniCssExtractPlugin from "mini-css-extract-plugin";
-import OptimizeCSSAssetsPlugin from "optimize-css-assets-webpack-plugin";
+import fs from "fs";
+import path from "path";
 import paths from "../paths";
-import {
-  aliases,
-  sassRegex,
-  jsRegex,
-  fileRegex,
-  sassModuleRegex
-} from "./shared.config.babel.js";
 
 // Revision plugin
 const versionPlugin = new GitRevisionPlugin();
@@ -132,7 +132,8 @@ export default (_: *, { mode }: { mode: string } = {}): Object => {
     },
     output: {
       path: paths.appDist,
-      filename: "[name].[hash].bundle.js"
+      filename: "[name].[hash].bundle.js",
+      publicPath: "/"
     },
     plugins: [styleLintPlugin, extractStyles, htmlWebpackPlugin, dotEnvPlugin],
     devtool: mode !== "production" ? "source-map" : false,
