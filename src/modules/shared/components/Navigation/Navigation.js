@@ -79,6 +79,7 @@ class Navigation extends Component<PropsType, StateType> {
               className={classNames(classes.listItem)}
               button
               key={"All Dictionaries"}
+              onClick={(): void => history.push("/")}
             >
               <ListItemIcon>
                 <SvgIcon>

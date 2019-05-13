@@ -33,5 +33,14 @@ export const styles = theme => ({
   },
   grid: {
     padding: "50px 200px"
+  },
+
+  fab: {
+    display: "flex",
+    margin: theme.spacing.unit,
+    "& button": {
+      marginLeft: "auto",
+      marginRight: "10px"
+    }
   }
 });

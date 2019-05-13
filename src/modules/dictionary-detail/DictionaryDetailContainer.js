@@ -1,5 +1,8 @@
 // @flow
 // NPM Modules
+import { get } from "lodash";
+import { withRouter } from "react-router-dom";
+import PropTypes from "prop-types";
 import React, { useEffect, useState } from "react";
 
 // External Modules
@@ -16,7 +19,7 @@ type DataState = {
 // ======================================================
 // DictionaryDetailContainer Stateless Component
 // ======================================================
-const DictionaryDetailContainer = (): React$Node => {
+const DictionaryDetailContainer = ({ match }): React$Node => {
   // ------------------------------------
   // React Lifecycle Functions
   // ------------------------------------
@@ -29,7 +32,12 @@ const DictionaryDetailContainer = (): React$Node => {
   const [state, setState] = useState(dataState);
 
   const onMountEffect = () => {
-    const id = 1;
+    const id = get(match, "params.id");
+    getDictionaryById(id);
+  };
+
+  const getDictionaryById = id => {
+    setState({ ...state, loading: true });
     getDictionary(id)
       .then((data): void => setState({ ...state, data, loading: false }))
       .catch((err): void => alert(JSON.stringify(err)));
@@ -44,9 +52,15 @@ const DictionaryDetailContainer = (): React$Node => {
   // ------------------------------------
   // Render Functions
   // ------------------------------------
-  return <DictionaryDetail dictionaryDetailData={state} />;
+  const mode = get(match, "params.mode", "default");
+  const editMode = mode === "edit";
+  return <DictionaryDetail dictionaryDetailData={state} editMode={editMode} />;
 };
 
 DictionaryDetailContainer.defaultProps = {};
 
-export default DictionaryDetailContainer;
+DictionaryDetailContainer.propTypes = {
+  match: PropTypes.object.isRequired
+};
+
+export default withRouter(DictionaryDetailContainer);

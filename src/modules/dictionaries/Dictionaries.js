@@ -5,13 +5,13 @@ import { get } from "lodash";
 import { withRouter } from "react-router-dom";
 import PropTypes from "prop-types";
 import React from "react";
-import Typography from "@material-ui/core/Typography";
 
 // External Modules
 
 // Components
 import { Loader } from "@modules/shared/components";
 import { withStyles } from "@material-ui/core/styles";
+import AddIcon from "@material-ui/icons/Add";
 import Button from "@material-ui/core/Button";
 import Divider from "@material-ui/core/Divider";
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
@@ -19,21 +19,26 @@ import ExpansionPanel from "@material-ui/core/ExpansionPanel";
 import ExpansionPanelActions from "@material-ui/core/ExpansionPanelActions";
 import ExpansionPanelDetails from "@material-ui/core/ExpansionPanelDetails";
 import ExpansionPanelSummary from "@material-ui/core/ExpansionPanelSummary";
+import Fab from "@material-ui/core/Fab";
 import Grid from "@material-ui/core/Grid";
+import Typography from "@material-ui/core/Typography";
 
 // Queries & Query Constants
 
 // Assets & Styles
+import { deleteDictionary } from "@modules/shared/utils/index";
 import { styles } from "./dictionariesStyles";
 
 type PropsType = {
   dictionariesData: *,
   classes: *,
-  history: *
+  history: *,
+  refetch: *
 };
 
 const Dictionaries = ({
   dictionariesData: { data: dictionaries, loading, error },
+  refetch,
   classes,
   history
 }: PropsType): React$Node => {
@@ -65,9 +70,18 @@ const Dictionaries = ({
               </ExpansionPanelDetails>
               <Divider />
               <ExpansionPanelActions>
-                <Button size="small">Delete</Button>
                 <Button
-                  onClick={(): void => history.push(`/dictionary/${id}`)}
+                  size="small"
+                  onClick={() => {
+                    deleteDictionary(id)
+                      .then(refetch)
+                      .catch(err => {});
+                  }}
+                >
+                  Delete
+                </Button>
+                <Button
+                  onClick={(): void => history.push(`/dictionary/${id}/edit`)}
                   size="small"
                   color="primary"
                 >
@@ -85,6 +99,15 @@ const Dictionaries = ({
 
   return (
     <Grid container spacing={24} className={classes.grid}>
+      <Grid item xs={12} className={classes.fab}>
+        <Fab
+          color="primary"
+          aria-label="Add"
+          onClick={(): void => history.push(`/dictionary/new`)}
+        >
+          <AddIcon />
+        </Fab>
+      </Grid>
       {renderDictionaries(dictionaries)}
     </Grid>
   );
@@ -93,7 +116,8 @@ const Dictionaries = ({
 Dictionaries.propTypes = {
   classes: PropTypes.object.isRequired,
   dictionariesData: PropTypes.object.isRequired,
-  history: PropTypes.object.isRequired
+  history: PropTypes.object.isRequired,
+  refetch: PropTypes.func.isRequired
 };
 
 export default compose(

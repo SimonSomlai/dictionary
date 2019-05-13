@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@hapi/joi": "^15.0.2",
     "@material-ui/core": "^3.9.3",
     "@material-ui/icons": "^3.0.2",
     "babel-plugin-named-asset-import": "^0.2.3",
@@ -39,6 +40,7 @@
     "jest-pnp-resolver": "1.0.1",
     "jest-resolve": "^24.7.1",
     "lodash": "^4.17.11",
+    "net": "^1.0.2",
     "node-sass": "^4.10.0",
     "react": "^16.6.3",
     "react-app-polyfill": "^0.1.3",

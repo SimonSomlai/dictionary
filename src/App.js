@@ -27,7 +27,10 @@ class App extends Component<PropsType, StateType> {
         <div>
           <Navigation />
           <Route path="/" exact component={DictionariesContainer} />
-          <Route path="/dictionary/:id" component={DictionaryDetailContainer} />
+          <Route
+            path="/dictionary/:id/:mode?"
+            component={DictionaryDetailContainer}
+          />
         </div>
       </Router>
     );

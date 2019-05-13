@@ -29,6 +29,11 @@ const DictionariesContainer = (): React$Node => {
   const [state, setState] = useState(dataState);
 
   const onMountEffect = () => {
+    getAllDictionaries();
+  };
+
+  const getAllDictionaries = () => {
+    setState({ ...state, loading: true });
     getDictionaries()
       .then((data): void => setState({ ...state, data, loading: false }))
       .catch((err): void => alert(JSON.stringify(err)));
@@ -39,7 +44,7 @@ const DictionariesContainer = (): React$Node => {
   // ------------------------------------
   // Render Functions
   // ------------------------------------
-  return <Dictionaries dictionariesData={state} />;
+  return <Dictionaries dictionariesData={state} refetch={getAllDictionaries} />;
 };
 
 DictionariesContainer.defaultProps = {};
