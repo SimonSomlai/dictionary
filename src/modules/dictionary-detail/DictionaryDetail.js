@@ -65,7 +65,7 @@ const comparator = (a, b): boolean => {
   );
 };
 
-const getErrorStatus = (a, b): * => {
+const getErrorStatus = ({ value: a, dupeValue: b }): * => {
   const duplicates = hasDuplicates(a, b);
   const forks = hasForks(a, b);
   const cycles = hasCycles(a, b);
@@ -97,25 +97,6 @@ const dictionaryValidations = Joi.object().keys({
   status: Joi.string().required(),
   entries: Joi.array()
     .unique(comparator)
-    .error(
-      (errors): * => {
-        return errors.map(
-          (err): * => {
-            if (err.type !== "array.unique") {
-              return { ...err, message: { message: err.message } };
-            } else {
-              return {
-                ...err,
-                message: getErrorStatus(
-                  err.context.value,
-                  err.context.dupeValue
-                )
-              };
-            }
-          }
-        );
-      }
-    )
     .items(
       Joi.object().keys({
         id: Joi.string().required(),
@@ -137,7 +118,7 @@ const DictionaryDetail = ({
   classes,
   history
 }: PropsType): React$Node => {
-  const [errors, setErrors] = useState({});
+  const [validationError, setValidationError] = useState({});
   const [editedDictionary, updateDictionary] = useState({});
 
   if (editMode && isEmpty(editedDictionary) && !isEmpty(dictionary)) {
@@ -181,25 +162,19 @@ const DictionaryDetail = ({
   const validateDictionary = (): Promise<any> => {
     // console.log("validate");
     return new Promise((resolve, reject) => {
-      const validation = Joi.validate(editedDictionary, dictionaryValidations);
-      // console.log(validation);
-
-      if (validation.error) {
-        const validationErrors = validation.error.details.reduce(
-          (acc, error): * => {
-            return set(acc, error.path[0], {
-              error: error.message,
-              index: error.context.pos
-            });
-          },
-          {}
-        );
-        // console.log(validation);
-        setErrors(validationErrors);
-        reject();
-      } else {
-        resolve();
-      }
+      Joi.validate(editedDictionary, dictionaryValidations)
+        .then(({ ...success }): void => setValidationError({}))
+        .catch(({ details }) => {
+          const { context, type, path, message } = get(details, "[0]", {});
+          switch (type) {
+            case "array.unique": {
+              setValidationError(set({}, path, getErrorStatus(context)));
+              break;
+            }
+            default:
+              setValidationError(set({}, path, { message, severity: 1 }));
+          }
+        });
     });
   };
   // console.log(errors);
@@ -214,19 +189,20 @@ const DictionaryDetail = ({
     updateDictionary(newDictionary);
   };
 
+  const hasError = (path): boolean => {
+    return !isEmpty(get(validationError, path, {}));
+  };
+
+  const getErrorMessage = (path): string => {
+    if (!hasError(path)) return "";
+    return get(validationError, path + "[message]", "");
+  };
+
   const renderEditMode = (): React$Node => {
     return (
       <Grid item xs={12} className={classes.gridItem}>
         <div className={classes.fab}>
-          <Fab
-            color="primary"
-            aria-label="Save"
-            onClick={() => {
-              validateDictionary()
-                .then(() => {})
-                .catch(() => {});
-            }}
-          >
+          <Fab color="primary" aria-label="Save" onClick={validateDictionary}>
             <SaveIcon />
           </Fab>
           <Fab color="secondary" aria-label="Delete">
@@ -249,8 +225,8 @@ const DictionaryDetail = ({
             handleInputChange(e);
           }}
           margin="normal"
-          error={!!errors["title"]}
-          helperText={!!errors["title"] && errors["title"]["error"]}
+          error={hasError("title")}
+          helperText={getErrorMessage("title")}
         />
         <TextField
           id="standard-name"
@@ -297,13 +273,12 @@ const DictionaryDetail = ({
                         }}
                         margin="normal"
                         error={
-                          !!errors["entries"] &&
-                          errors["entries"]["index"] === index
+                          hasError(`entries[${index}].domain`) ||
+                          hasError(`entries[${index}]`)
                         }
                         helperText={
-                          !!errors["entries"] &&
-                          errors["entries"]["path"] === index &&
-                          errors["entries"]["message"]["message"]
+                          getErrorMessage(`entries[${index}].domain`) ||
+                          getErrorMessage(`entries[${index}]`)
                         }
                       />
                     </TableCell>
@@ -319,13 +294,12 @@ const DictionaryDetail = ({
                         }}
                         margin="normal"
                         error={
-                          !!errors["entries"] &&
-                          errors["entries"]["index"] === index
+                          hasError(`entries[${index}].range`) ||
+                          hasError(`entries[${index}]`)
                         }
                         helperText={
-                          !!errors["entries"] &&
-                          errors["entries"]["index"] === index &&
-                          errors["entries"]["message"]["message"]
+                          getErrorMessage(`entries[${index}].range`) ||
+                          getErrorMessage(`entries[${index}]`)
                         }
                       />
                     </TableCell>
