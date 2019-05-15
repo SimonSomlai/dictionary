@@ -16,6 +16,7 @@ type DataState = {
   data: *,
   loading: boolean
 };
+
 // ======================================================
 // DictionaryDetailContainer Stateless Component
 // ======================================================
@@ -30,27 +31,27 @@ const DictionaryDetailContainer = ({ match }): React$Node => {
   };
 
   const [state, setState] = useState(dataState);
-  const mode = get(match, "params.mode", "default");
   const id = get(match, "params.id", "");
+  const mode = get(match, "params.mode", "default");
   const editMode = mode === "edit" || mode === "new";
 
   const getDictionaryById = () => {
-    const id = get(match, "params.id");
     setState({ ...state, loading: true });
     getDictionary(id)
       .then(
-        (data): void =>
-          setState({
+        (data): void => {
+          return setState({
             ...state,
-            data: data || getNewDictionary(id),
+            data: editMode ? data || getNewDictionary(id) : data,
             loading: false
-          })
+          });
+        }
       )
       .catch((err): * => err);
   };
 
   useEffect(getDictionaryById, []);
-  useEffect(getDictionaryById, [id]);
+  useEffect(getDictionaryById, [id, mode]);
 
   // ------------------------------------
   // Helper Functions

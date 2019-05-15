@@ -4,6 +4,7 @@
 import { findIndex } from "lodash";
 
 // External Modules
+import { DICTIONARY_STATUSES } from "@modules/shared/constants/index";
 
 // Components
 
@@ -25,15 +26,15 @@ export const getDictionaries = (): * => {
         id: generateId(),
         title: "Phone Colors",
         entries: [
-          { id: "2slxx4vbid8", domain: "stonegrey", range: "dark grey" },
-          { id: "gb5ms2iq85g", domain: "midnight black", range: "black" },
-          { id: "1xjgj9cv0c3", domain: "mystic silver", range: "silver" },
-          { id: "49o6j75x9oz", domain: "mystic silver", range: "silver" },
-          { id: "3lvmled4y9", domain: "silver", range: "mystic silver" },
-          { id: "fv2i1hwa1xd", domain: "midnight black", range: "dark grey" },
-          { id: "roptv64juxr", domain: "", range: "" }
+          { id: generateId(), domain: "stonegrey", range: "dark grey" },
+          { id: generateId(), domain: "midnight black", range: "black" },
+          { id: generateId(), domain: "mystic silver", range: "silver" },
+          { id: generateId(), domain: "mystic silver", range: "silver" },
+          { id: generateId(), domain: "silver", range: "mystic silver" },
+          { id: generateId(), domain: "midnight black", range: "dark grey" },
+          { id: generateId(), domain: "", range: "" }
         ],
-        status: "DRAFT"
+        status: DICTIONARY_STATUSES.DRAFT
       },
       {
         id: generateId(),
@@ -41,9 +42,10 @@ export const getDictionaries = (): * => {
         entries: [
           { id: generateId(), domain: "racing red", range: "red" },
           { id: generateId(), domain: "turbo turqoise", range: "cyan" },
-          { id: generateId(), domain: "speedy silver", range: "silver" }
+          { id: generateId(), domain: "speedy silver", range: "silver" },
+          { id: generateId(), domain: "yawning yellow", range: "yellow" }
         ],
-        status: "VALID"
+        status: DICTIONARY_STATUSES.VALID
       }
     ]);
     return getDictionaries();
@@ -53,29 +55,35 @@ export const getDictionaries = (): * => {
 export const getDictionary = (dictionaryId: string): * => {
   return getDictionaries()
     .then(
-      (dictionaries): * => {
-        return dictionaries.find(({ id }): * => id === dictionaryId);
-      }
+      (dictionaries): * => dictionaries.find(({ id }): * => id === dictionaryId)
     )
-    .catch((err): void => alert(JSON.stringify(err)));
+    .catch((err): void => err);
 };
 
 export const getNewDictionary = (dictionaryId: string): * => ({
   id: dictionaryId,
   title: "",
   entries: [],
-  status: "DRAFT"
+  status: DICTIONARY_STATUSES.DRAFT
 });
 
-export const createDictionary = (dictionary: *): * => {
+export const createDictionary = (newDictionary: *): * => {
   return getDictionaries()
     .then(
       (dictionaries): * => {
-        const newDictionaries = dictionaries.concat(dictionary);
-        return setDictionaries(newDictionaries);
+        const index = findIndex(
+          dictionaries,
+          (dictionary): boolean => dictionary.id === newDictionary.id
+        );
+        if (index === -1) {
+          const newDictionaries = dictionaries.concat(newDictionary);
+          return setDictionaries(newDictionaries);
+        } else {
+          throw new Error("dictionary with this id already exists");
+        }
       }
     )
-    .catch((err): void => alert(JSON.stringify(err)));
+    .catch((err): void => err);
 };
 
 export const updateDictionary = (dictionaryId: string, dictionary: *): * => {
@@ -90,7 +98,7 @@ export const updateDictionary = (dictionaryId: string, dictionary: *): * => {
         return setDictionaries(dictionaries);
       }
     )
-    .catch((err): void => alert(JSON.stringify(err)));
+    .catch((err): void => err);
 };
 
 export const deleteDictionary = (dictionaryId: string): * => {
@@ -107,7 +115,7 @@ export const deleteDictionary = (dictionaryId: string): * => {
           setDictionaries(newDictionaries);
           resolve();
         })
-        .catch((err): void => alert(JSON.stringify(err)));
+        .catch((err): void => err);
     } else {
       reject();
     }

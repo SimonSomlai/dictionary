@@ -11,21 +11,12 @@ import GitRevisionPlugin from "git-revision-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import OptimizeCSSAssetsPlugin from "optimize-css-assets-webpack-plugin";
-import React from "react";
-import ReactDOMServer from "react-dom/server";
 import StyleLintPlugin from "stylelint-webpack-plugin";
 import TerserPlugin from "terser-webpack-plugin";
-import fs from "fs";
-import path from "path";
 import paths from "../paths";
 
 // Revision plugin
 const versionPlugin = new GitRevisionPlugin();
-
-// Exctract Text SCSS
-const extractStyles = new MiniCssExtractPlugin({
-  filename: "[name].[hash].bundle.css"
-});
 
 // Style lint
 const styleLintPlugin = new StyleLintPlugin({
@@ -50,7 +41,7 @@ const getStyleLoader = (
     }
   },
   {
-    loader: mode !== "production" ? "css-loader" : MiniCssExtractPlugin.loader,
+    loader: "css-loader",
     query: {
       sourceMap: mode !== "production",
       url: true,
@@ -135,7 +126,7 @@ export default (_: *, { mode }: { mode: string } = {}): Object => {
       filename: "[name].[hash].bundle.js",
       publicPath: "/"
     },
-    plugins: [styleLintPlugin, extractStyles, htmlWebpackPlugin, dotEnvPlugin],
+    plugins: [styleLintPlugin, htmlWebpackPlugin, dotEnvPlugin],
     devtool: mode !== "production" ? "source-map" : false,
     devServer: {
       historyApiFallback: true

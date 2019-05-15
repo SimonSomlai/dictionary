@@ -43,59 +43,6 @@ const Dictionaries = ({
   classes,
   history
 }: PropsType): React$Node => {
-  const renderDictionaries = (dictionaries): React$Node => {
-    return dictionaries.map(
-      (dictionary, index): React$Node => {
-        const title = get(dictionary, "title");
-        const entries = get(dictionary, "entries", []);
-        const numberOfEntries = entries.length;
-        const status = get(dictionary, "status", null);
-        const id = get(dictionary, "id", null);
-        return (
-          <Grid key={title} item xs={12}>
-            <ExpansionPanel>
-              <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                <div className={classes.column}>
-                  <Typography className={classes.heading}>
-                    {`${title} (${numberOfEntries} entries)`}
-                  </Typography>
-                </div>
-                <div className={classes.column}>
-                  <Typography className={classes.secondaryHeading}>
-                    {status}
-                  </Typography>
-                </div>
-              </ExpansionPanelSummary>
-              <ExpansionPanelDetails className={classes.details}>
-                <div className={classes.column} />
-              </ExpansionPanelDetails>
-              <Divider />
-              <ExpansionPanelActions>
-                <Button
-                  size="small"
-                  onClick={() => {
-                    deleteDictionary(id)
-                      .then(refetch)
-                      .catch(err => {});
-                  }}
-                >
-                  Delete
-                </Button>
-                <Button
-                  onClick={(): void => history.push(`/dictionary/${id}/edit`)}
-                  size="small"
-                  color="primary"
-                >
-                  Edit
-                </Button>
-              </ExpansionPanelActions>
-            </ExpansionPanel>
-          </Grid>
-        );
-      }
-    );
-  };
-
   if (loading) return <Loader />;
 
   return (
@@ -109,8 +56,78 @@ const Dictionaries = ({
           <AddIcon />
         </Fab>
       </Grid>
-      {renderDictionaries(dictionaries)}
+      <DictionariesList
+        classes={classes}
+        refetch={refetch}
+        dictionaries={dictionaries}
+        history={history}
+      />
     </Grid>
+  );
+};
+
+const DictionariesList = ({
+  dictionaries,
+  classes,
+  refetch,
+  history
+}): React$Node => {
+  return dictionaries.map(
+    (dictionary, index): React$Node => {
+      const title = get(dictionary, "title");
+      const entries = get(dictionary, "entries", []);
+      const numberOfEntries = entries.length;
+      const status = get(dictionary, "status", null);
+      const id = get(dictionary, "id", null);
+      return (
+        <Grid key={title} item xs={12}>
+          <ExpansionPanel>
+            <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+              <div className={classes.column}>
+                <Typography className={classes.heading}>
+                  {`${title} (${numberOfEntries} entries)`}
+                </Typography>
+              </div>
+              <div className={classes.column}>
+                <Typography className={classes.secondaryHeading}>
+                  {status}
+                </Typography>
+              </div>
+            </ExpansionPanelSummary>
+            <ExpansionPanelDetails className={classes.details}>
+              <div className={classes.column} />
+            </ExpansionPanelDetails>
+            <Divider />
+            <ExpansionPanelActions>
+              <Button
+                size="small"
+                onClick={(): void => history.push(`/dictionary/${id}`)}
+              >
+                View
+              </Button>
+              <Button
+                onClick={(): void => history.push(`/dictionary/${id}/edit`)}
+                size="small"
+                color="primary"
+              >
+                Edit
+              </Button>
+              <Button
+                size="small"
+                color="secondary"
+                onClick={() => {
+                  deleteDictionary(id)
+                    .then(refetch)
+                    .catch(err => {});
+                }}
+              >
+                Delete
+              </Button>
+            </ExpansionPanelActions>
+          </ExpansionPanel>
+        </Grid>
+      );
+    }
   );
 };
 
