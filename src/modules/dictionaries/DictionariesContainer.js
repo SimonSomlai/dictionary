@@ -36,7 +36,7 @@ const DictionariesContainer = (): React$Node => {
     setState({ ...state, loading: true });
     getDictionaries()
       .then((data): void => setState({ ...state, data, loading: false }))
-      .catch((err): void => alert(JSON.stringify(err)));
+      .catch((err): * => err);
   };
 
   useEffect(onMountEffect, []);

@@ -7,6 +7,7 @@ import PropTypes from "prop-types";
 import React from "react";
 
 // External Modules
+import { generateId } from "@modules/shared/utils/index";
 
 // Components
 import { Loader } from "@modules/shared/components";
@@ -103,7 +104,7 @@ const Dictionaries = ({
         <Fab
           color="primary"
           aria-label="Add"
-          onClick={(): void => history.push(`/dictionary/new`)}
+          onClick={(): void => history.push(`/dictionary/${generateId()}/new`)}
         >
           <AddIcon />
         </Fab>

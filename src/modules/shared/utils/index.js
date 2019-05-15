@@ -1,8 +1,10 @@
 import {
+  createDictionary,
   deleteDictionary,
   generateId,
   getDictionaries,
   getDictionary,
+  getNewDictionary,
   setDictionaries,
   updateDictionary
 } from "./utils";
@@ -13,5 +15,7 @@ export {
   getDictionary,
   deleteDictionary,
   updateDictionary,
-  generateId
+  getNewDictionary,
+  generateId,
+  createDictionary
 };

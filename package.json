@@ -22,10 +22,11 @@
   },
   "dependencies": {
     "@babel/plugin-syntax-dynamic-import": "^7.2.0",
-    "@hapi/joi": "^15.0.2",
+    "@hapi/joi": "^15.0.3",
     "@material-ui/core": "^3.9.3",
     "@material-ui/icons": "^3.0.2",
     "babel-plugin-named-asset-import": "^0.2.3",
+    "babel-polyfill": "^6.26.0",
     "babel-preset-react-app": "^6.1.0",
     "bfj": "6.1.1",
     "chalk": "2.4.1",

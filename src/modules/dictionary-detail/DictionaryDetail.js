@@ -1,14 +1,19 @@
+/* eslint-disable smells/no-this-assign */
 /* eslint-disable max-statements */
 // @flow
 // NPM Modules
 import { compose } from "redux";
-import { get, isEmpty, set } from "lodash";
+import { findIndex, get, isEmpty, set, uniqWith } from "lodash";
 import { withRouter } from "react-router-dom";
 import Joi from "@hapi/joi";
-import React, { useState } from "react";
+import React, { PureComponent } from "react";
 
 // External Modules
-import { deleteDictionary } from "@modules/shared/utils/index";
+import {
+  createDictionary,
+  deleteDictionary,
+  updateDictionary
+} from "@modules/shared/utils/index";
 import { generateId } from "@modules/shared/utils/index";
 
 // Components
@@ -40,169 +45,100 @@ type PropsType = {
   dictionaryDetailData: *,
   classes: *,
   editMode: boolean,
-  history: *
+  history: *,
+  refetch: *,
+  match: *
 };
 
+type StateType = {
+  validationErrors: *,
+  editedDictionary: *
+};
+
+const DEFAULT_SEVERITY = 1;
 /**
  * DictionaryDetail
  */
-const hasDuplicates = (a, b): boolean => {
-  return a.domain === b.domain && a.range === b.range;
-};
-const hasForks = (a, b): boolean => {
-  return a.domain === b.domain;
-};
-const hasCycles = (a, b): boolean => {
-  return a.domain === b.range && a.range === b.domain;
-};
-const hasChains = (a, b): boolean => {
-  return a.range === b.domain || b.range === a.domain;
-};
-
-const comparator = (a, b): boolean => {
-  return (
-    hasDuplicates(a, b) || hasForks(a, b) || hasCycles(a, b) || hasChains(a, b)
-  );
-};
-
-const getErrorStatus = ({ value: a, dupeValue: b }): * => {
-  const duplicates = hasDuplicates(a, b);
-  const forks = hasForks(a, b);
-  const cycles = hasCycles(a, b);
-  const chains = hasChains(a, b);
-
-  switch (true) {
-    case duplicates:
-      return {
-        message: "Duplicate domain & range detected",
-        severity: 2
-      };
-    case forks:
-      return { message: "Forked entry detected", severity: 2 };
-    case cycles:
-      return { message: "Cyclical entry detected", severity: 3 };
-    case chains:
-      return { message: "Chained entry detected", severity: 2 };
-    default:
-      break;
-  }
-};
-
-const dictionaryValidations = Joi.object().keys({
-  id: Joi.string().required(),
-  title: Joi.string()
-    .min(1)
-    .max(30)
-    .required(),
-  status: Joi.string().required(),
-  entries: Joi.array()
-    .unique(comparator)
-    .items(
-      Joi.object().keys({
-        id: Joi.string().required(),
-        domain: Joi.string()
-          .min(1)
-          .max(30)
-          .required(),
-        range: Joi.string()
-          .min(1)
-          .max(30)
-          .required()
-      })
-    )
-});
-
-const DictionaryDetail = ({
-  editMode,
-  dictionaryDetailData: { loading, data: dictionary, error },
-  classes,
-  history
-}: PropsType): React$Node => {
-  const [validationError, setValidationError] = useState({});
-  const [editedDictionary, updateDictionary] = useState({});
-
-  if (editMode && isEmpty(editedDictionary) && !isEmpty(dictionary)) {
-    updateDictionary(dictionary);
+class DictionaryDetail extends PureComponent<PropsType, StateType> {
+  // ------------------------------------
+  // React Lifecycle Functions
+  // ------------------------------------
+  constructor(props) {
+    super(props);
+    this.state = {
+      validationErrors: {},
+      editedDictionary: {}
+    };
   }
 
-  const getDictionary = (): * => (editMode ? editedDictionary : dictionary);
-  const entries = get(getDictionary(), "entries", []);
-  const title = get(getDictionary(), "title", "");
-  const status = get(getDictionary(), "status", "");
-  const id = get(getDictionary(), "id", null);
+  componentDidUpdate(previousProps) {
+    const {
+      state: { editedDictionary },
+      props: {
+        editMode,
+        dictionaryDetailData: { loading, data: dictionary }
+      }
+    } = this;
+    const wasEditing = get(previousProps, "match.params.mode", "") === "edit";
+    const isCreating = get(this.props, "match.params.mode", "") === "new";
 
-  if (loading) return <Loader />;
-
-  const addDictionaryEntry = () => {
-    updateDictionary({
-      ...editedDictionary,
-      entries: [
-        ...editedDictionary.entries,
-        { id: generateId(), domain: "", range: "" }
-      ]
-    });
-  };
-
-  const deleteDictionaryEntry = entryId => {
-    const shouldDelete = window.confirm(
-      "Are you sure that you want to delete this entry?"
-    );
-
-    if (shouldDelete) {
-      const newEntries = editedDictionary.entries.filter(
-        ({ id }): boolean => id !== entryId
+    if (wasEditing && isCreating) {
+      this.setState(
+        (old): * => ({
+          ...old,
+          editedDictionary: {}
+        })
       );
-      updateDictionary({
-        ...editedDictionary,
-        entries: newEntries
-      });
     }
-  };
 
-  const validateDictionary = (): Promise<any> => {
-    // console.log("validate");
-    return new Promise((resolve, reject) => {
-      Joi.validate(editedDictionary, dictionaryValidations)
-        .then(({ ...success }): void => setValidationError({}))
-        .catch(({ details }) => {
-          const { context, type, path, message } = get(details, "[0]", {});
-          switch (type) {
-            case "array.unique": {
-              setValidationError(set({}, path, getErrorStatus(context)));
-              break;
-            }
-            default:
-              setValidationError(set({}, path, { message, severity: 1 }));
-          }
-        });
-    });
-  };
-  // console.log(errors);
-  const handleInputChange = event => {
-    const path = get(event, "target.name", null);
-    const value = get(event, "target.value", null);
-    const newDictionary = set(
-      { ...dictionary, ...editedDictionary },
-      path,
-      value
+    if (editMode && !loading && isEmpty(editedDictionary)) {
+      this.setState(
+        (old): * => ({
+          ...old,
+          editedDictionary: dictionary
+        })
+      );
+    }
+  }
+
+  // ------------------------------------
+  // Render Functions
+  // ------------------------------------
+  render(): React$Node {
+    const {
+      classes: { grid },
+      dictionaryDetailData: { loading },
+      editMode
+    } = this.props;
+
+    if (loading) return <Loader />;
+
+    return (
+      <Grid container spacing={24} className={grid}>
+        {editMode ? this.renderEditMode() : this.renderDefaultMode()}
+      </Grid>
     );
-    updateDictionary(newDictionary);
-  };
+  }
 
-  const hasError = (path): boolean => {
-    return !isEmpty(get(validationError, path, {}));
-  };
+  renderEditMode = (): React$Node => {
+    const {
+      props: { classes, history, match },
+      state: { editedDictionary: dictionary }
+    } = this;
 
-  const getErrorMessage = (path): string => {
-    if (!hasError(path)) return "";
-    return get(validationError, path + "[message]", "");
-  };
+    const entries = get(dictionary, "entries", []);
+    const title = get(dictionary, "title", "");
+    const status = get(dictionary, "status", "");
+    const id = get(match, "params.id", "");
 
-  const renderEditMode = (): React$Node => {
     return (
       <Grid item xs={12} className={classes.gridItem}>
         <div className={classes.fab}>
-          <Fab color="primary" aria-label="Save" onClick={validateDictionary}>
+          <Fab
+            color="primary"
+            aria-label="Save"
+            onClick={this.validateDictionary}
+          >
             <SaveIcon />
           </Fab>
           <Fab color="secondary" aria-label="Delete">
@@ -220,19 +156,19 @@ const DictionaryDetail = ({
           label="title"
           name="title"
           className={classes.textField}
-          defaultValue={title}
+          value={title}
           onChange={e => {
-            handleInputChange(e);
+            this.handleInputChange(e);
           }}
           margin="normal"
-          error={hasError("title")}
-          helperText={getErrorMessage("title")}
+          error={this.hasError("title")}
+          helperText={this.getErrorMessage("title")}
         />
         <TextField
           id="standard-name"
           label="status"
           className={classes.textField}
-          defaultValue={status}
+          value={status}
           margin="normal"
           disabled
         />
@@ -248,14 +184,10 @@ const DictionaryDetail = ({
             </TableHead>
             <TableBody>
               {entries.map(
-                (entry, index): React$Node => (
-                  <TableRow key={entry.id}>
-                    <TableCell
-                      className={classes.cell}
-                      component="th"
-                      scope="row"
-                    >
-                      {entry.id}
+                ({ domain, range, id: entryId }, index): React$Node => (
+                  <TableRow key={entryId}>
+                    <TableCell component="th" scope="row">
+                      {entryId}
                     </TableCell>
                     <TableCell
                       className={classes.cell}
@@ -266,19 +198,19 @@ const DictionaryDetail = ({
                         id="standard-name"
                         label="domain"
                         className={classes.textField}
-                        defaultValue={entry.domain}
+                        value={domain}
                         name={`entries[${index}].domain`}
                         onChange={e => {
-                          handleInputChange(e);
+                          this.handleInputChange(e);
                         }}
                         margin="normal"
                         error={
-                          hasError(`entries[${index}].domain`) ||
-                          hasError(`entries[${index}]`)
+                          this.hasError(`entries[${index}].domain`) ||
+                          this.hasError(`entries[${index}]`)
                         }
                         helperText={
-                          getErrorMessage(`entries[${index}].domain`) ||
-                          getErrorMessage(`entries[${index}]`)
+                          this.getErrorMessage(`entries[${index}].domain`) ||
+                          this.getErrorMessage(`entries[${index}]`)
                         }
                       />
                     </TableCell>
@@ -287,19 +219,19 @@ const DictionaryDetail = ({
                         id="standard-name"
                         label="range"
                         className={classes.textField}
-                        defaultValue={entry.range}
+                        value={range}
                         name={`entries[${index}].range`}
                         onChange={e => {
-                          handleInputChange(e);
+                          this.handleInputChange(e);
                         }}
                         margin="normal"
                         error={
-                          hasError(`entries[${index}].range`) ||
-                          hasError(`entries[${index}]`)
+                          this.hasError(`entries[${index}].range`) ||
+                          this.hasError(`entries[${index}]`)
                         }
                         helperText={
-                          getErrorMessage(`entries[${index}].range`) ||
-                          getErrorMessage(`entries[${index}]`)
+                          this.getErrorMessage(`entries[${index}].range`) ||
+                          this.getErrorMessage(`entries[${index}]`)
                         }
                       />
                     </TableCell>
@@ -307,7 +239,7 @@ const DictionaryDetail = ({
                       <Fab color="secondary" aria-label="Delete">
                         <DeleteIcon
                           onClick={() => {
-                            deleteDictionaryEntry(entry.id);
+                            this.deleteDictionaryEntry(entryId);
                           }}
                         />
                       </Fab>
@@ -321,7 +253,7 @@ const DictionaryDetail = ({
             <Fab
               color="primary"
               aria-label="Add"
-              onClick={(): void => addDictionaryEntry()}
+              onClick={(): void => this.addDictionaryEntry()}
             >
               <AddIcon />
             </Fab>
@@ -331,7 +263,21 @@ const DictionaryDetail = ({
     );
   };
 
-  const renderDefaultMode = (): React$Node => {
+  renderDefaultMode = (): React$Node => {
+    const {
+      props: {
+        classes,
+        history,
+        match,
+        dictionaryDetailData: { data: dictionary }
+      }
+    } = this;
+
+    const entries = get(dictionary, "entries", []);
+    const title = get(dictionary, "title", "");
+    const status = get(dictionary, "status", "");
+    const id = get(match, "params.id", null);
+
     return (
       <Grid item xs={12} className={classes.gridItem}>
         <div className={classes.fab}>
@@ -371,25 +317,19 @@ const DictionaryDetail = ({
             </TableHead>
             <TableBody>
               {entries.map(
-                (entry): React$Node => (
-                  <TableRow key={entry.id}>
-                    <TableCell
-                      className={classes.cell}
-                      component="th"
-                      scope="row"
-                    >
-                      {entry.id}
+                ({ domain, range, id: entryId }): React$Node => (
+                  <TableRow key={entryId}>
+                    <TableCell component="th" scope="row">
+                      {entryId}
                     </TableCell>
                     <TableCell
                       className={classes.cell}
                       component="th"
                       scope="row"
                     >
-                      {entry.domain}
+                      {domain}
                     </TableCell>
-                    <TableCell className={classes.cell}>
-                      {entry.range}
-                    </TableCell>
+                    <TableCell className={classes.cell}>{range}</TableCell>
                   </TableRow>
                 )
               )}
@@ -399,19 +339,285 @@ const DictionaryDetail = ({
       </Grid>
     );
   };
+  // ------------------------------------
+  // Helper Functions
+  // ------------------------------------
+  addDictionaryEntry = () => {
+    this.setState(
+      (old): * => ({
+        ...old,
+        editedDictionary: {
+          ...old.editedDictionary,
+          validationErrors: {},
+          entries: [
+            ...old.editedDictionary.entries,
+            { id: generateId(), domain: "", range: "" }
+          ]
+        }
+      })
+    );
+  };
 
-  return (
-    <Grid container spacing={24} className={classes.grid}>
-      {editMode ? renderEditMode() : renderDefaultMode()}
-    </Grid>
-  );
-};
+  deleteDictionaryEntry = entryId => {
+    const { editedDictionary } = this.state;
+    const shouldDelete = window.confirm(
+      "Are you sure that you want to delete this entry?"
+    );
+
+    if (shouldDelete) {
+      const newEntries = editedDictionary.entries.filter(
+        ({ id }): boolean => id !== entryId
+      );
+      this.setState(
+        (old): * => ({
+          ...old,
+          validationErrors: {},
+          editedDictionary: {
+            ...old.editedDictionary,
+            entries: newEntries
+          }
+        })
+      );
+    }
+  };
+
+  checkConsistency = (entries): * => {
+    const messages = [];
+    uniqWith(
+      entries,
+      (a, b): boolean => {
+        if (this.isInvalid(a, b)) return false;
+        const duplicate = this.hasDuplicates(a, b);
+        const fork = this.hasForks(a, b);
+        const cycle = this.hasCycles(a, b);
+        const chain = this.hasChains(a, b);
+        let index = findIndex(entries, (entry): * => entry.id === a.id);
+
+        if (duplicate) {
+          messages.push({
+            type: "array.duplicate",
+            message: "Duplicate domain & range detected (critical)",
+            severity: 2,
+            path: ["entries", index],
+            index
+          });
+        }
+
+        if (fork) {
+          messages.push({
+            type: "array.fork",
+            message: "Forked entry detected (critical)",
+            severity: 2,
+            path: ["entries", index],
+            index
+          });
+        }
+
+        if (cycle) {
+          messages.push({
+            type: "array.cycle",
+            message: "Cyclical entry detected (critical)",
+            severity: 3,
+            path: ["entries", index],
+            index
+          });
+        }
+        if (chain) {
+          messages.push({
+            type: "array.chain",
+            message: "Chained entry detected (critical)",
+            severity: 2,
+            path: ["entries", index],
+            index
+          });
+        }
+        return duplicate || fork || cycle || chain;
+      }
+    );
+
+    return messages;
+  };
+
+  runSchemaValidations = (dictionary): * => {
+    return Joi.validate(dictionary, this.dictionarySchema, {
+      abortEarly: false,
+      allowUnknown: true
+    })
+      .catch(({ ...all }): * => all)
+      .then((validatedObject): * => validatedObject);
+  };
+
+  validateDictionary = async (): * => {
+    const {
+      state: { editedDictionary },
+      props: {
+        history,
+        refetch,
+        match: {
+          params: { id: dictionaryId }
+        }
+      }
+    } = this;
+
+    const validationResults = await this.runSchemaValidations(editedDictionary);
+    const schemaErrors = validationResults.details || [];
+    const consistencyErrors = this.checkConsistency(editedDictionary.entries);
+    const errors = [...schemaErrors, ...consistencyErrors];
+
+    if (!isEmpty(errors)) {
+      const maxSeverity = errors.reduce((max, error): * => {
+        if (error.severity > max) max = error.severity;
+        return max;
+      }, 1);
+
+      const validationErrors = errors.reduce(
+        (acc, error): * =>
+          set(acc, error.path, { severity: DEFAULT_SEVERITY, ...error }),
+        {}
+      );
+
+      this.setState(
+        (old): * => ({ ...old, validationErrors }),
+        () => {
+          if (maxSeverity > 1) {
+            window.alert(
+              "Please resolve critical validation errors before saving"
+            );
+          } else {
+            const confirm = window.confirm(
+              "There are still some none-critical errors left. Continue and save as draft?"
+            );
+            if (confirm) {
+              this.saveDictionary(dictionaryId, {
+                ...editedDictionary,
+                status: "DRAFT"
+              }).then(
+                (): * => {
+                  history.push(`/dictionary/${dictionaryId}`);
+                  refetch();
+                }
+              );
+            }
+          }
+        }
+      );
+    } else {
+      this.setState((old): * => ({ ...old, validationErrors: {} }));
+      this.saveDictionary(dictionaryId, {
+        ...validationResults,
+        status: "VALID"
+      }).then(
+        (): * => {
+          history.push(`/dictionary/${dictionaryId}`);
+          refetch();
+        }
+      );
+    }
+  };
+
+  saveDictionary = (id, dictionary): * => {
+    const { match } = this.props;
+    const mode = get(match, "params.mode");
+    if (mode === "edit") {
+      return updateDictionary(id, dictionary);
+    } else {
+      return createDictionary(dictionary);
+    }
+  };
+
+  handleInputChange = event => {
+    const path = get(event, "target.name", null);
+    const value = get(event, "target.value", null);
+    const {
+      state: { editedDictionary },
+      props: {
+        dictionaryDetailData: { data: dictionary }
+      }
+    } = this;
+    const newDictionary = set(
+      { ...dictionary, ...editedDictionary },
+      path,
+      value
+    );
+    this.setState(
+      (old): * => ({
+        ...old,
+        editedDictionary: newDictionary
+      })
+    );
+  };
+
+  hasError = (path): boolean => {
+    const { validationErrors } = this.state;
+    return !isEmpty(get(validationErrors, path, {}));
+  };
+
+  getErrorMessage = (path): string => {
+    const { validationErrors } = this.state;
+    if (!this.hasError(path)) return "";
+    return get(validationErrors, path + "[message]", "");
+  };
+
+  isInvalid = (a, b): boolean => {
+    return !(a.id !== b.id && a.domain && b.domain && a.range && b.range);
+  };
+
+  hasDuplicates = (a, b): boolean => {
+    return a.domain === b.domain && a.range === b.range;
+  };
+
+  hasForks = (a, b): boolean => {
+    return a.domain === b.domain && a.range !== b.range;
+  };
+
+  hasCycles = (a, b): boolean => {
+    return a.domain === b.range && a.range === b.domain;
+  };
+
+  hasChains = (a, b): boolean => {
+    return a.range === b.domain || b.range === a.domain;
+  };
+
+  dictionarySchema = Joi.object().keys({
+    id: Joi.string()
+      .trim()
+      .lowercase()
+      .required(),
+    title: Joi.string()
+      .trim()
+      .lowercase()
+      .required(),
+    status: Joi.string()
+      .trim()
+      .lowercase()
+      .required(),
+    entries: Joi.array()
+      .items(
+        Joi.object().keys({
+          id: Joi.string()
+            .trim()
+            .lowercase()
+            .required(),
+          domain: Joi.string()
+            .trim()
+            .lowercase()
+            .required(),
+          range: Joi.string()
+            .trim()
+            .lowercase()
+            .required()
+        })
+      )
+      .required()
+  });
+}
 
 DictionaryDetail.propTypes = {
   classes: PropTypes.object.isRequired,
   dictionaryDetailData: PropTypes.object.isRequired,
   editMode: PropTypes.bool.isRequired,
-  history: PropTypes.object.isRequired
+  history: PropTypes.object.isRequired,
+  match: PropTypes.object.isRequired
 };
 
 export default compose(

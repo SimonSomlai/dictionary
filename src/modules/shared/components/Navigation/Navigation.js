@@ -7,6 +7,7 @@ import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 
 // External Modules
+import { generateId } from "@modules/shared/utils/index";
 
 // Components
 import {
@@ -92,7 +93,9 @@ class Navigation extends Component<PropsType, StateType> {
               className={classNames(classes.listItem)}
               button
               key={"New Dictionary"}
-              onClick={(): void => history.push("/dictionary/new")}
+              onClick={(): void =>
+                history.push(`/dictionary/${generateId()}/new`)
+              }
             >
               <ListItemIcon>
                 <SvgIcon>

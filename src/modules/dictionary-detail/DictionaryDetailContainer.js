@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 import React, { useEffect, useState } from "react";
 
 // External Modules
-import { getDictionary } from "@modules/shared/utils/";
+import { getDictionary, getNewDictionary } from "@modules/shared/utils/";
 
 // Components
 import DictionaryDetail from "./DictionaryDetail";
@@ -30,20 +30,27 @@ const DictionaryDetailContainer = ({ match }): React$Node => {
   };
 
   const [state, setState] = useState(dataState);
+  const mode = get(match, "params.mode", "default");
+  const id = get(match, "params.id", "");
+  const editMode = mode === "edit" || mode === "new";
 
-  const onMountEffect = () => {
+  const getDictionaryById = () => {
     const id = get(match, "params.id");
-    getDictionaryById(id);
-  };
-
-  const getDictionaryById = id => {
     setState({ ...state, loading: true });
     getDictionary(id)
-      .then((data): void => setState({ ...state, data, loading: false }))
-      .catch((err): void => alert(JSON.stringify(err)));
+      .then(
+        (data): void =>
+          setState({
+            ...state,
+            data: data || getNewDictionary(id),
+            loading: false
+          })
+      )
+      .catch((err): * => err);
   };
 
-  useEffect(onMountEffect, []);
+  useEffect(getDictionaryById, []);
+  useEffect(getDictionaryById, [id]);
 
   // ------------------------------------
   // Helper Functions
@@ -52,9 +59,14 @@ const DictionaryDetailContainer = ({ match }): React$Node => {
   // ------------------------------------
   // Render Functions
   // ------------------------------------
-  const mode = get(match, "params.mode", "default");
-  const editMode = mode === "edit";
-  return <DictionaryDetail dictionaryDetailData={state} editMode={editMode} />;
+  return (
+    <DictionaryDetail
+      dictionaryDetailData={state}
+      editMode={editMode}
+      refetch={getDictionaryById}
+      match={match}
+    />
+  );
 };
 
 DictionaryDetailContainer.defaultProps = {};

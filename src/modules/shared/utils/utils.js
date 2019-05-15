@@ -1,6 +1,7 @@
 // @flow
 
 // NPM Modules
+import { findIndex } from "lodash";
 
 // External Modules
 
@@ -15,18 +16,22 @@ export const setDictionaries = (obj: *): * => {
 };
 
 export const getDictionaries = (): * => {
-  const data = localStorage.getItem("dictionaries");
-  if (data) {
-    return new Promise((resolve): * => resolve(JSON.parse(data)));
+  const dictionaries = localStorage.getItem("dictionaries");
+  if (dictionaries) {
+    return new Promise((resolve): * => resolve(JSON.parse(dictionaries)));
   } else {
     setDictionaries([
       {
         id: generateId(),
         title: "Phone Colors",
         entries: [
-          { id: generateId(), domain: "stonegrey", range: "dark grey" },
-          { id: generateId(), domain: "midnight black", range: "black" },
-          { id: generateId(), domain: "mystic silver", range: "silver" }
+          { id: "2slxx4vbid8", domain: "stonegrey", range: "dark grey" },
+          { id: "gb5ms2iq85g", domain: "midnight black", range: "black" },
+          { id: "1xjgj9cv0c3", domain: "mystic silver", range: "silver" },
+          { id: "49o6j75x9oz", domain: "mystic silver", range: "silver" },
+          { id: "3lvmled4y9", domain: "silver", range: "mystic silver" },
+          { id: "fv2i1hwa1xd", domain: "midnight black", range: "dark grey" },
+          { id: "roptv64juxr", domain: "", range: "" }
         ],
         status: "DRAFT"
       },
@@ -48,8 +53,41 @@ export const getDictionaries = (): * => {
 export const getDictionary = (dictionaryId: string): * => {
   return getDictionaries()
     .then(
-      (data): * => {
-        return data.find(({ id }): * => id === dictionaryId);
+      (dictionaries): * => {
+        return dictionaries.find(({ id }): * => id === dictionaryId);
+      }
+    )
+    .catch((err): void => alert(JSON.stringify(err)));
+};
+
+export const getNewDictionary = (dictionaryId: string): * => ({
+  id: dictionaryId,
+  title: "",
+  entries: [],
+  status: "DRAFT"
+});
+
+export const createDictionary = (dictionary: *): * => {
+  return getDictionaries()
+    .then(
+      (dictionaries): * => {
+        const newDictionaries = dictionaries.concat(dictionary);
+        return setDictionaries(newDictionaries);
+      }
+    )
+    .catch((err): void => alert(JSON.stringify(err)));
+};
+
+export const updateDictionary = (dictionaryId: string, dictionary: *): * => {
+  return getDictionaries()
+    .then(
+      (dictionaries): * => {
+        const index = findIndex(
+          dictionaries,
+          ({ id }): * => id === dictionaryId
+        );
+        dictionaries[index] = dictionary;
+        return setDictionaries(dictionaries);
       }
     )
     .catch((err): void => alert(JSON.stringify(err)));
@@ -62,8 +100,8 @@ export const deleteDictionary = (dictionaryId: string): * => {
     );
     if (shouldDelete) {
       getDictionaries()
-        .then(data => {
-          const newDictionaries = data.filter(
+        .then(dictionaries => {
+          const newDictionaries = dictionaries.filter(
             ({ id }): * => id !== dictionaryId
           );
           setDictionaries(newDictionaries);

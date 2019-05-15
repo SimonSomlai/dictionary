@@ -80,7 +80,7 @@ export default (_: *, { mode }: { mode: string } = {}): Object => {
   return {
     mode: mode || "development",
     context: paths.appSrc,
-    entry: paths.appIndex,
+    entry: ["babel-polyfill", paths.appIndex],
     module: {
       rules: [
         // Javascripts
